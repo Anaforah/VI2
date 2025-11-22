@@ -1,6 +1,5 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
-// Tooltip global do radar
 const radarTooltip = d3.select("body")
     .append("div")
     .style("position","absolute")
@@ -13,7 +12,6 @@ const radarTooltip = d3.select("body")
     .style("max-width","260px")
     .style("font-size","12px");
 
-// Descrições curtas por parâmetro
 const paramDescriptions = {
     "HAPPINESS SCORE": "Overall happiness score based on survey responses.",
     "GDP PER CAPITA (Billions)": `GDP per capita in PPP-adjusted 2021 dollars (WDI 2024). 2024 values use OECD/World Bank forecasts. Natural log used in the model.`,
@@ -46,7 +44,6 @@ export function updateRadarForYears(dataArray, animate=false) {
     svg.attr("transform", `translate(${width/2},${height/2})`);
 
 
-    // Parâmetros do radar
     const parameters = [
         "HAPPINESS SCORE MIN-MAX NORMALIZATION",
         "GDP PER CAPITA (Billions) MIN-MAX NORMALIZATION",
@@ -110,9 +107,6 @@ export function updateRadarForYears(dataArray, animate=false) {
             .text(d => axisLabelsMap[d] || d);
     }
 
-
-
-    // Linha do radar
     const radarLine = d3.lineRadial()
         .radius(d => rScale(d.value))
         .angle((d,i) => i*angleSlice)

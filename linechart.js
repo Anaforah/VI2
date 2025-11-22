@@ -45,7 +45,6 @@ let svg = d3.select("#my_dataviz")
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Tooltip
 const tooltip = d3.select("body")
 .append("div")
 .style("position", "absolute")
@@ -72,13 +71,11 @@ to the Gallup World Poll (GWP) question:
 
 d3.csv("dataset-ukrain.csv").then(function(data) {
 
-    // Converte para números e evita NaN
     data.forEach(d => {
         d.YEAR = +d.YEAR;
         parameters.forEach(p => d[p] = d[p] === "" || d[p] === undefined ? 0 : +d[p]);
     });
 
-    // Escalas
     let x = d3.scaleLinear().domain([2015, 2024]).range([0, width]);
     let y = d3.scaleLinear().domain([0, 1]).range([height, 0]);
     let color = d3.scaleOrdinal().domain(parameters).range(d3.schemeCategory10);
@@ -91,21 +88,18 @@ d3.csv("dataset-ukrain.csv").then(function(data) {
 
     parameters.forEach((param, i) => {
 
-        // Line
         let line = svg.append("path")
             .datum(data)
             .attr("class", "line_" + i)
             .attr("fill", "none")
             .attr("stroke", color(param))
             .attr("stroke-width", 2)
-            .attr("stroke-opacity", 0.2)   // LINHAS VISÍVEIS DESDE O INÍCIO
+            .attr("stroke-opacity", 0.2)
             .attr("d", d3.line()
                 .x(d => x(d.YEAR))
                 .y(d => y(d[param]))
             );
 
-        // Circles
-        // Circles
 let points = svg.selectAll(`circle_${i}`)
 .data(data)
 .enter()
@@ -118,7 +112,6 @@ let points = svg.selectAll(`circle_${i}`)
 .attr("fill-opacity", 0.2)
 .style("cursor", "pointer")
 
-// HOVER → TOOLTIP COM DESCRIÇÃO
 .on("mouseover", function (event, d) {
 
     const rawParam = param.replace(" MIN-MAX NORMALIZATION", "");
@@ -227,10 +220,9 @@ let points = svg.selectAll(`circle_${i}`)
                 const fakeLegendData = [{ YEAR: "—", ...Object.fromEntries(parameters.map(p => [p, 0])) }];
                 updateRadarForYears(fakeLegendData);
             
-                // Reset das linhas, mas mantém os círculos visíveis
                 parameters.forEach((p, j) => {
                     d3.select(".line_" + j).attr("stroke-opacity", 0.2);
-                    d3.selectAll(".circle_" + j).attr("fill-opacity", 0.2); // <- mantém os círculos visíveis
+                    d3.selectAll(".circle_" + j).attr("fill-opacity", 0.2);
                 });
                 return;
             }
