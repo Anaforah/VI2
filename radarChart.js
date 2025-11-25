@@ -23,7 +23,6 @@ const paramDescriptions = {
 };
 
 
-
 export function updateRadarForYears(dataArray, animate=false) {
 
     const width = window.innerWidth/3, height = window.innerWidth/3;
@@ -33,7 +32,6 @@ export function updateRadarForYears(dataArray, animate=false) {
     if (!animate) svgContainer.selectAll("*").remove();
 
     let svgEl = svgContainer.select("svg");
-
     if (svgEl.empty()) svgEl = svgContainer.append("svg");
 
     svgEl.attr("width", width).attr("height", height);
@@ -68,19 +66,20 @@ export function updateRadarForYears(dataArray, animate=false) {
     const rScale = d3.scaleLinear().domain([0,1]).range([0,radius]);
 
 
-
     // -------------------------
-    // GRID + AXIS (apenas 1x)
+    // GRID + AXIS (only once)
     // -------------------------
     if (!animate) {
         
+        // Grey circular grid
         for (let level = 1; level <= 5; level++) {
             svg.append("circle")
                 .attr("r", radius * level / 5)
                 .attr("fill", "none")
-                .attr("stroke", "#CDCDCD");
+                .attr("stroke", "#cccccc");
         }
 
+        // Grey axis lines
         const axis = svg.selectAll(".axis")
             .data(parameters)
             .enter()
@@ -92,8 +91,9 @@ export function updateRadarForYears(dataArray, animate=false) {
             .attr("y1", 0)
             .attr("x2", (d,i) => rScale(1) * Math.cos(i * angleSlice - Math.PI/2))
             .attr("y2", (d,i) => rScale(1) * Math.sin(i * angleSlice - Math.PI/2))
-            .attr("stroke", "#CDCDCD");
+            .attr("stroke", "#cccccc");
 
+        // Axis labels
         svg.selectAll(".axisLabel")
             .data(parameters)
             .enter()
@@ -104,21 +104,19 @@ export function updateRadarForYears(dataArray, animate=false) {
             .attr("text-anchor", "middle")
             .attr("dy", "0.35em")
             .style("font-size", "12px")
+            .style("fill", "#444") 
             .text(d => axisLabelsMap[d] || d);
     }
+
 
     const radarLine = d3.lineRadial()
         .radius(d => rScale(d.value))
         .angle((d,i) => i*angleSlice)
         .curve(d3.curveLinearClosed);
 
-    const color = d3.scaleOrdinal()
-        .domain(dataArray.map(d => d.YEAR))
-        .range(d3.schemeCategory10);
-
 
     // -------------------------
-    // DESENHAR RADARES + PONTOS
+    // DRAW RADARS + POINTS
     // -------------------------
     dataArray.forEach((d,i) => {
 
@@ -145,24 +143,23 @@ export function updateRadarForYears(dataArray, animate=false) {
 
                     return t => interpolator(t);
                 })
-                .attr("stroke", color(d.YEAR))
-                .attr("fill", color(d.YEAR))
-                .attr("fill-opacity",0.25)
+                .attr("stroke", "#555")
+                .attr("fill", "#999")
+                .attr("fill-opacity",0.35)
                 .attr("stroke-width",2);
         }
         else {
             path
                 .attr("d", radarLine(radarData))
-                .attr("stroke", color(d.YEAR))
-                .attr("fill", color(d.YEAR))
-                .attr("fill-opacity",0.25)
+                .attr("stroke", "#555")
+                .attr("fill", "#999")
+                .attr("fill-opacity",0.35)
                 .attr("stroke-width",2);
         }
 
 
-
         // -------------------------
-        // PONTOS + TOOLTIP
+        // POINTS + TOOLTIP (grey)
         // -------------------------
         svg.selectAll(`.radarPoint_${d.YEAR}`).remove();
 
@@ -174,7 +171,7 @@ export function updateRadarForYears(dataArray, animate=false) {
             .attr("r", 5)
             .attr("cx", (p,j) => rScale(p.value) * Math.cos(j * angleSlice - Math.PI/2))
             .attr("cy", (p,j) => rScale(p.value) * Math.sin(j * angleSlice - Math.PI/2))
-            .attr("fill", color(d.YEAR))
+            .attr("fill", "#555")
             .attr("fill-opacity", 0.9)
             .style("cursor","pointer")
 

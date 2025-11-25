@@ -9,10 +9,28 @@
 <body>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <h1>War and Wellbeing <br> in Ukraine</h1>
-    <a href="bestworst.html">Compare to best/worst country</a>
     <div class="radarChart"></div>
     <div id="my_dataviz"></div>
     <button id="playBtn">▶ Play</button>
+    <h1>Compare to best/worst country</h1>
+    <div>
+        <div id="dotplot_chart1"></div>
+        <div>
+          <label for="varSelect">Escolha a variável:</label>
+          <select id="varSelect">
+            <option value="HAPPINESS SCORE">Happiness score</option>
+            <option value="GDP PER CAPITA (Billions)">GDP per capita (billions)</option>
+            <option value="SOCIAL SUPPORT">Social support</option>
+            <option value="HEALTHY LIFE EXPECTANCY">Healthy life expectancy</option>
+            <option value="FREEDOM TO MAKE LIFE CHOICES">Freedom to make life choices</option>
+            <option value="GENEROSITY">Generosity</option>
+            <option value="PERCEPTION OF CORRUPTION">Perception of corruption</option>
+          </select>
+        </div>
+        <div id="dotplot_chart2"></div>
+      </div>
+      
+    <script src="dotplot.js"></script>
     <script   type="module" src="linechart.js"></script>
 </body>
 </html>

@@ -98,7 +98,9 @@ d3.csv("dataset-ukrain.csv").then(function(data) {
             .attr("d", d3.line()
                 .x(d => x(d.YEAR))
                 .y(d => y(d[param]))
-            );
+            ).on('click',function(abc){
+                console.log("Olá", abc);
+            });//adicionar on na função de click
 
 let points = svg.selectAll(`circle_${i}`)
 .data(data)
@@ -177,8 +179,15 @@ let points = svg.selectAll(`circle_${i}`)
         .attr("transform", `translate(0,${height})`)
         .call(d3.axisBottom(x).ticks(10).tickFormat(d3.format("d")));
 
-    svg.append("g")
-        .call(d3.axisLeft(y).tickValues([0, 0.5, 1]).tickFormat(d3.format(".1f")));
+        const yAxis = svg.append("g")
+        .call(
+            d3.axisLeft(y)
+                .tickSize(0)
+                .tickFormat('')   // hide numbers
+        );
+    
+    // REMOVE the vertical axis line
+    yAxis.select(".domain").remove();
 
     // ----------------------------
     // LEGENDA
