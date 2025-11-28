@@ -22,7 +22,6 @@ const paramDescriptions = {
     "PERCEPTION OF CORRUPTION": "Perceived corruption in government and business."
 };
 
-
 export function updateRadarForYears(dataArray, animate=false) {
 
     const width = window.innerWidth/3, height = window.innerWidth/3;
@@ -32,15 +31,13 @@ export function updateRadarForYears(dataArray, animate=false) {
     if (!animate) svgContainer.selectAll("*").remove();
 
     let svgEl = svgContainer.select("svg");
-    if (svgEl.empty()) svgEl = svgContainer.append("svg");
-
-    svgEl.attr("width", width).attr("height", height);
+    if (svgEl.empty()) svgEl = svgContainer.append("svg")
+        .attr("width", width)
+        .attr("height", height);
 
     let svg = svgEl.select("g");
-    if (svg.empty()) svg = svgEl.append("g");
-
-    svg.attr("transform", `translate(${width/2},${height/2})`);
-
+    if (svg.empty()) svg = svgEl.append("g")
+        .attr("transform", `translate(${width/2},${height/2})`);
 
     const parameters = [
         "HAPPINESS SCORE MIN-MAX NORMALIZATION",
@@ -65,55 +62,62 @@ export function updateRadarForYears(dataArray, animate=false) {
     const angleSlice = (2 * Math.PI) / parameters.length;
     const rScale = d3.scaleLinear().domain([0,1]).range([0,radius]);
 
+    // Escala de cinza para cada radar
+    const grayScale = d3.scaleLinear()
+        .domain([0, dataArray.length - 1])
+        .range([0.4, 0.8]); // tons de cinza (mais claro a mais escuro)
+
+    // -------------------------
+    // Glow filter
+    // -------------------------
+    const defs = svg.select("defs").empty() ? svg.append("defs") : svg.select("defs");
+    const filter = defs.select("#glow").empty() ? defs.append("filter").attr("id","glow") : defs.select("#glow");
+    filter.selectAll("*").remove();
+    filter.append("feGaussianBlur").attr("stdDeviation","2.5").attr("result","coloredBlur");
+    const feMerge = filter.append("feMerge");
+    feMerge.append("feMergeNode").attr("in","coloredBlur");
+    feMerge.append("feMergeNode").attr("in","SourceGraphic");
 
     // -------------------------
     // GRID + AXIS (only once)
     // -------------------------
     if (!animate) {
-        
-        // Grey circular grid
+        // Grey circular grid with glow
         for (let level = 1; level <= 5; level++) {
             svg.append("circle")
                 .attr("r", radius * level / 5)
-                .attr("fill", "none")
-                .attr("stroke", "#cccccc");
+                .attr("fill", "#CDCDCD")
+                .attr("fill-opacity", 0.1)
+                .attr("stroke", "#CDCDCD")
+                .style("filter", "url(#glow)");
         }
 
-        // Grey axis lines
-        const axis = svg.selectAll(".axis")
-            .data(parameters)
-            .enter()
-            .append("g")
-            .attr("class", "axis");
+        // Axis lines and labels
+        parameters.forEach((p,i)=>{
+            svg.append("line")
+                .attr("x1",0).attr("y1",0)
+                .attr("x2", rScale(1) * Math.cos(i*angleSlice - Math.PI/2))
+                .attr("y2", rScale(1) * Math.sin(i*angleSlice - Math.PI/2))
+                .attr("stroke","white").attr("stroke-width",2);
 
-        axis.append("line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", (d,i) => rScale(1) * Math.cos(i * angleSlice - Math.PI/2))
-            .attr("y2", (d,i) => rScale(1) * Math.sin(i * angleSlice - Math.PI/2))
-            .attr("stroke", "#cccccc");
-
-        // Axis labels
-        svg.selectAll(".axisLabel")
-            .data(parameters)
-            .enter()
-            .append("text")
-            .attr("class", "axisLabel")
-            .attr("x", (d, i) => rScale(1.15) * Math.cos(i * angleSlice - Math.PI/2))
-            .attr("y", (d, i) => rScale(1.15) * Math.sin(i * angleSlice - Math.PI/2))
-            .attr("text-anchor", "middle")
-            .attr("dy", "0.35em")
-            .style("font-size", "12px")
-            .style("fill", "#444") 
-            .text(d => axisLabelsMap[d] || d);
+            svg.append("text")
+                .attr("x", rScale(1.15) * Math.cos(i*angleSlice - Math.PI/2))
+                .attr("y", rScale(1.15) * Math.sin(i*angleSlice - Math.PI/2))
+                .attr("text-anchor","middle")
+                .attr("dy","0.35em")
+                .style("font-size","12px")
+                .style("fill","#444")
+                .text(axisLabelsMap[p] || p);
+        });
     }
 
-
+    // -------------------------
+    // RADAR LINE with slight curvature
+    // -------------------------
     const radarLine = d3.lineRadial()
         .radius(d => rScale(d.value))
         .angle((d,i) => i*angleSlice)
-        .curve(d3.curveLinearClosed);
-
+        .curve(d3.curveCardinalClosed); // linhas levemente curvas
 
     // -------------------------
     // DRAW RADARS + POINTS
@@ -121,10 +125,10 @@ export function updateRadarForYears(dataArray, animate=false) {
     dataArray.forEach((d,i) => {
 
         const radarData = parameters.map(p => ({ axis: p, value: d[p] }));
+        const gray = grayScale(i);
 
         // Path
         let path = svg.selectAll(`.radarPath_${d.YEAR}`).data([radarData]);
-
         path = path.enter()
             .append("path")
             .attr("class", `radarPath_${d.YEAR}`)
@@ -136,47 +140,37 @@ export function updateRadarForYears(dataArray, animate=false) {
                 .attrTween("d", function(dNew) {
                     const previous = this._current || radarLine(dNew);
                     const current = radarLine(dNew);
-
                     const interpolator = d3.interpolateString(previous, current);
-
                     this._current = current;
-
                     return t => interpolator(t);
                 })
-                .attr("stroke", "#555")
-                .attr("fill", "#999")
-                .attr("fill-opacity",0.35)
-                .attr("stroke-width",2);
-        }
-        else {
+                .attr("stroke", `rgba(50,50,50,${gray})`)
+                .attr("fill", `rgba(100,100,100,${gray*0.4})`)
+                .attr("stroke-width",2)
+                .style("filter","url(#glow)");
+        } else {
             path
                 .attr("d", radarLine(radarData))
-                .attr("stroke", "#555")
-                .attr("fill", "#999")
-                .attr("fill-opacity",0.35)
-                .attr("stroke-width",2);
+                .attr("stroke", `rgba(50,50,50,${gray})`)
+                .attr("fill", `rgba(100,100,100,${gray*0.4})`)
+                .attr("stroke-width",2)
+                .style("filter","url(#glow)");
         }
 
-
-        // -------------------------
-        // POINTS + TOOLTIP (grey)
-        // -------------------------
+        // Points + Tooltip
         svg.selectAll(`.radarPoint_${d.YEAR}`).remove();
-
         svg.selectAll(`.radarPoint_${d.YEAR}`)
             .data(radarData)
             .enter()
             .append("circle")
             .attr("class", `radarPoint_${d.YEAR}`)
             .attr("r", 5)
-            .attr("cx", (p,j) => rScale(p.value) * Math.cos(j * angleSlice - Math.PI/2))
-            .attr("cy", (p,j) => rScale(p.value) * Math.sin(j * angleSlice - Math.PI/2))
-            .attr("fill", "#555")
-            .attr("fill-opacity", 0.9)
+            .attr("cx", (p,j) => rScale(p.value) * Math.cos(j*angleSlice - Math.PI/2))
+            .attr("cy", (p,j) => rScale(p.value) * Math.sin(j*angleSlice - Math.PI/2))
+            .attr("fill", `rgba(50,50,50,${gray})`)
+            .attr("fill-opacity", 0.8)
             .style("cursor","pointer")
-
             .on("mouseover", function(event, p) {
-
                 const rawParam = p.axis.replace(" MIN-MAX NORMALIZATION", "");
                 const rawValue = d[rawParam];
                 const description = paramDescriptions[rawParam] || "No description available.";
