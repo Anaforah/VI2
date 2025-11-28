@@ -105,6 +105,8 @@ d3.csv("dataset-ukrain.csv").then(function(data) {
     // LINHAS E PONTOS
     let lines = [];
     let pointsGroups = [];
+    let activeLines = {};  
+    parameters.forEach(p => activeLines[p] = false);  // começam desligadas (0.2 é default visual)
 
     parameters.forEach((param, i) => {
         let pointsGroupG = svg.append("g").attr("class", "pointsGroup_" + i);
@@ -115,7 +117,7 @@ d3.csv("dataset-ukrain.csv").then(function(data) {
             .attr("fill", "none")
             .attr("stroke", color(param))
             .attr("stroke-width", 2)
-            .attr("stroke-opacity", 0.2)
+            .attr("stroke-opacity", 0.2)   // INÍCIO 0.2
             .attr("d", d3.line()
                 .x(d => x(d.YEAR))
                 .y(d => y(d[param]))
@@ -129,7 +131,7 @@ d3.csv("dataset-ukrain.csv").then(function(data) {
             .attr("cy", d => y(d[param]))
             .attr("r", 5)
             .attr("fill", color(param))
-            .attr("fill-opacity", 0.2)
+            .attr("fill-opacity", 0.2)    // INÍCIO 0.2
             .style("cursor", "pointer")
             .on("mouseover", (event, d) => handleMouseOver(event, d, param))
             .on("mousemove", handleMouseMove)
@@ -140,16 +142,56 @@ d3.csv("dataset-ukrain.csv").then(function(data) {
     });
 
     // LEGENDA
-    const legend = svg.append("g")
-        .attr("class", "legend")
-        .attr("transform", `translate(${width - 100}, 20)`);
+// LEGENDA
+const legend = svg.append("g")
+    .attr("class", "legend")
+    .attr("transform", `translate(${width - 100}, 20)`);
 
-    parameters.forEach((param, i) => {
-        const g = legend.append("g").attr("transform", `translate(0, ${i * 20})`);
-        g.append("rect").attr("width", 12).attr("height", 12).attr("fill", color(param));
-        g.append("text").attr("x", 18).attr("y", 10).style("font-size", "12px")
-            .text(legendNames[param] || param);
-    });
+parameters.forEach((param, i) => {
+    const g = legend.append("g")
+        .attr("transform", `translate(0, ${i * 20})`)
+        .style("cursor", "pointer")
+        .on("click", function () {
+
+            // inverter estado
+            activeLines[param] = !activeLines[param];
+
+            // atualizar opacidade da legenda
+            d3.select(this).select("text")
+                .style("opacity", activeLines[param] ? 1 : 0.3);
+
+            d3.select(this).select("rect")
+                .style("opacity", activeLines[param] ? 1 : 0.3);
+
+            // encontrar linha e pontos correspondentes
+            const lineObj = lines[i];
+            const pointsGroup = pointsGroups[i];
+
+            // atualizar opacidade das linhas e pontos
+            lineObj.path.transition().duration(300)
+                .attr("stroke-opacity", activeLines[param] ? 1 : 0.2);
+
+            pointsGroup.group.selectAll("circle")
+                .transition()
+                .duration(300)
+                .attr("fill-opacity", activeLines[param] ? 1 : 0.2);
+        });
+
+    g.append("rect")
+        .attr("width", 12)
+        .attr("height", 12)
+        .attr("fill", color(param))
+        .style("opacity", 0.3); // legenda inicia 0.3
+
+    g.append("text")
+        .attr("x", 18)
+        .attr("y", 10)
+        .style("font-size", "12px")
+        .style("opacity", 0.3)  // legenda inicia 0.3
+        .text(legendNames[param] || param);
+});
+
+
 
     // RADAR INICIAL
     updateRadarForYears(data);
@@ -197,7 +239,7 @@ d3.csv("dataset-ukrain.csv").then(function(data) {
                                   .attr("cy", d => y(d[param]))
                                   .attr("r", 5)
                                   .attr("fill", color(param))
-                                  .attr("fill-opacity", 0.2)
+                                  .attr("fill-opacity", activeLines[param] ? 1 : 0.2)
                                   .style("cursor", "pointer")
                                   .on("mouseover", (event, d) => handleMouseOver(event, d, param))
                                   .on("mousemove", handleMouseMove)
@@ -207,6 +249,9 @@ d3.csv("dataset-ukrain.csv").then(function(data) {
                                     .attr("cy", d => y(d[param])),
                     exit => exit.remove()
                 );
+
+            // manter apenas se ativo
+            lineObj.path.attr("stroke-opacity", activeLines[param] ? 1 : 0);
         });
 
         // Atualiza radar chart
