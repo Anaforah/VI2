@@ -5,7 +5,6 @@ function createDotPlot(containerId, columnName, yDescending = true, bestData, wo
         width = 500 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
 
-  // Limpar container
   d3.select(containerId).selectAll("*").remove();
 
   const svg = d3.select(containerId)
@@ -33,18 +32,11 @@ function createDotPlot(containerId, columnName, yDescending = true, bestData, wo
 
   const colors = ["#ff7f0e", "#1f77b4", "#2ca02c"];
 
-  function update(columnName, yearRange = null) {
-    let bestFiltered = bestData;
-    let worstFiltered = worstData;
-    let ukrainFiltered = ukrainData;
+  function update(columnName, yearRange = [2015, 2024]) {
 
-    // Filtrar por anos
-    if (yearRange) {
-      const [start, end] = yearRange;
-      bestFiltered = bestData.filter(d => +d.YEAR >= start && +d.YEAR <= end);
-      worstFiltered = worstData.filter(d => +d.YEAR >= start && +d.YEAR <= end);
-      ukrainFiltered = ukrainData.filter(d => +d.YEAR >= start && +d.YEAR <= end);
-    }
+    let bestFiltered = bestData.filter(d => +d.YEAR >= yearRange[0] && +d.YEAR <= yearRange[1]);
+    let worstFiltered = worstData.filter(d => +d.YEAR >= yearRange[0] && +d.YEAR <= yearRange[1]);
+    let ukrainFiltered = ukrainData.filter(d => +d.YEAR >= yearRange[0] && +d.YEAR <= yearRange[1]);
 
     const worstByYear = new Map(worstFiltered.map(d => [d.YEAR, d]));
     const ukrainByYear = new Map(ukrainFiltered.map(d => [d.YEAR, d]));
@@ -52,6 +44,7 @@ function createDotPlot(containerId, columnName, yDescending = true, bestData, wo
     const merged = bestFiltered.map(d => {
       const w = worstByYear.get(d.YEAR) || {};
       const u = ukrainByYear.get(d.YEAR) || {};
+
       return {
         group: d.YEAR,
         vals: [
@@ -62,26 +55,24 @@ function createDotPlot(containerId, columnName, yDescending = true, bestData, wo
       };
     });
 
-    console.log(`Atualizando gráfico para "${columnName}" e anos: ${yearRange}`, merged);
-
-    // Eixo X
     x.domain(merged.map(d => d.group));
     xAxis.transition().duration(800).call(d3.axisBottom(x));
 
-    // Eixo Y
     const allVals = merged.flatMap(d => d.vals.map(v => v.value).filter(v => !isNaN(v)));
-    const yDomain = yDescending ? [d3.max(allVals), d3.min(allVals)] : [d3.min(allVals), d3.max(allVals)];
+    const yDomain = yDescending ?
+      [d3.max(allVals), d3.min(allVals)] :
+      [d3.min(allVals), d3.max(allVals)];
+
     y.domain(yDomain);
     yAxis.transition().duration(800).call(d3.axisLeft(y));
 
-    // Grupos
     const groups = svg.selectAll(".rowGroup").data(merged, d => d.group);
     groups.exit().remove();
+
     const groupsEnter = groups.enter().append("g").attr("class", "rowGroup");
     const groupsMerged = groupsEnter.merge(groups)
       .attr("transform", d => `translate(${x(d.group)},0)`);
 
-    // Círculos e linhas
     groupsMerged.each(function(d) {
       const group = d3.select(this);
       const circles = group.selectAll("circle").data(d.vals);
@@ -97,48 +88,42 @@ function createDotPlot(containerId, columnName, yDescending = true, bestData, wo
         .attr("cy", v => y(v.value))
         .attr("opacity", v => isNaN(v.value) ? 0 : 1);
 
-      // Tooltip
       group.selectAll("circle")
         .on("mouseover", (event, v) => {
-          tooltip.transition().duration(200).style("opacity", 1);
-          tooltip.html(`<strong>País:</strong> ${v.country}<br/><strong>${columnName}:</strong> ${v.value}`)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY - 25) + "px");
+          tooltip.style("opacity", 1)
+            .html(`<strong>País:</strong> ${v.country}<br><strong>${columnName}:</strong> ${v.value}`)
+            .style("left", event.pageX + 10 + "px")
+            .style("top", event.pageY - 20 + "px");
         })
-        .on("mousemove", event => {
-          tooltip.style("left", (event.pageX + 10) + "px")
-                 .style("top", (event.pageY - 25) + "px");
-        })
-        .on("mouseout", () => tooltip.transition().duration(200).style("opacity", 0));
+        .on("mouseout", () => tooltip.style("opacity", 0));
 
-      // Linha vertical
-      const validPoints = d.vals.filter(v => !isNaN(v.value))
-                                 .map(v => ({x: x.bandwidth()/2, y: y(v.value)}))
-                                 .sort((a,b)=>a.y-b.y);
-      const lineGen = d3.line().x(p => p.x).y(p => p.y);
+      const validPoints = d.vals
+        .filter(v => !isNaN(v.value))
+        .map(v => ({x: x.bandwidth()/2, y: y(v.value)}))
+        .sort((a,b)=>a.y-b.y);
 
       const path = group.selectAll("path.line").data(validPoints.length >= 2 ? [validPoints] : []);
-      path.exit().transition().duration(500).attr("opacity", 0).remove();
+      path.exit().remove();
 
-      path.enter()
-        .append("path")
+      path.enter().append("path")
         .attr("class", "line")
         .merge(path)
         .transition().duration(800)
-        .attr("d", lineGen)
-        .attr("fill", "none")
+        .attr("d", d3.line().x(p => p.x).y(p => p.y))
         .attr("stroke", "#666")
         .attr("stroke-width", 1)
-        .attr("opacity", 1);
+        .attr("fill", "none");
     });
   }
 
-  // Inicializa com intervalo completo
-  update(columnName, [2015, 2024]);
+  update(columnName);
   return { update };
 }
 
-// ---------------- USO ----------------
+
+// -----------------------------------------------------------------------------
+//  USO — DOIS SELECTS FUNCIONANDO AO MESMO TEMPO
+// -----------------------------------------------------------------------------
 
 Promise.all([
   d3.csv("bestranking.csv"),
@@ -146,17 +131,23 @@ Promise.all([
   d3.csv("dataset-ukrain.csv")
 ]).then(([best, worst, ukrain]) => {
 
-  // Gráfico 1 fixo
-  const chart1 = createDotPlot("#dotplot_chart1", "HAPPINESS SCORE", true, best, worst, ukrain);
+  let currentVar = "HAPPINESS SCORE";
+  let currentRange = [2015, 2024];
 
-  // Gráfico 2 dinâmico
-  const chart2 = createDotPlot("#dotplot_chart2", "HAPPINESS SCORE", false, best, worst, ukrain);
+  const chart1 = createDotPlot("#dotplot_chart1", currentVar, true, best, worst, ukrain);
+  const chart2 = createDotPlot("#dotplot_chart2", currentVar, false, best, worst, ukrain);
 
-  // Atualizar ambos os gráficos quando muda o select de anos
+  // SELECT DE VARIÁVEL
   d3.select("#varSelect").on("change", function() {
-    const [start, end] = this.value.split("-").map(Number);
-    chart1.update("HAPPINESS SCORE", [start, end]);
-    chart2.update("HAPPINESS SCORE", [start, end]);
+    currentVar = this.value;
+    chart2.update(currentVar, currentRange);
   });
 
-}).catch(error => console.error("Erro ao carregar dados:", error));
+  // SELECT DE ANOS
+  d3.select("#yearSelect").on("change", function() {
+    currentRange = this.value.split("-").map(Number);
+    chart1.update(currentVar, currentRange);
+    chart2.update(currentVar, currentRange);
+  });
+
+});

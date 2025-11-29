@@ -203,7 +203,7 @@ parameters.forEach((param, i) => {
     }
 
     // FILTRO PELO SELECT
-    const yearSelect = document.getElementById("varSelect");
+    const yearSelect = document.getElementById("yearSelect");
     yearSelect.addEventListener("change", function() {
         const selectedValue = this.value;
         const [startYear, endYear] = selectedValue.split("-").map(d => +d);
