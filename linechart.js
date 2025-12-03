@@ -318,7 +318,7 @@ to the Gallup World Poll (GWP) question:
 
         function startTimelineAnimation() {
             playing = true;
-            playBtn.textContent = "⏸ Pause";
+            playBtn.textContent = "Pause the animation";
 
             currentYearIndex = 0;
             updateLineChartToYear(years[0]);
@@ -337,7 +337,7 @@ to the Gallup World Poll (GWP) question:
 
         function stopTimelineAnimation() {
             playing = false;
-            playBtn.textContent = "▶ Play";
+            playBtn.textContent = "Play the animation";
             clearInterval(playInterval);
         }
 
@@ -349,11 +349,10 @@ to the Gallup World Poll (GWP) question:
     });
 }
 
-
 // ---- CALL THE FUNCTION ----
 createLineChart(
-    window.innerWidth - 120 - 120,  // width
-    300 - 10 - 30,                  // height
-    { top: 10, right: 120, bottom: 30, left: 120 },  // margin
+    window.innerWidth,  // width
+    250,                  // height
+    { top:0, right:0, bottom:150, left:0 },  // margin
     true                            // animation ON
 );

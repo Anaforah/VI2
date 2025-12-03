@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>War and Wellbeing in Ukraine . A Data Visualization Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3/dist/css/uikit.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/uikit@3/dist/js/uikit.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/uikit@3/dist/js/uikit-icons.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+    <body>
+        <div uk-sticky="sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky; end: + *; offset: 0; uk-animation-fade" class="uk-position-z-index-high">
+
+            <nav class="uk-navbar-container">
+                <div class="uk-container">
+                    <div uk-navbar>
+                        <div class="uk-navbar-left">
+                            <ul class="uk-navbar-nav">
+                                <li class="uk-active"><a href="#year2015">2015</a></li>
+                                <li><a href="#">2016</a></li>
+                                <li><a href="#">2017</a></li>
+                                <li><a href="#">2018</a></li>
+                                <li><a href="#">2019</a></li>
+                                <li><a href="#">2020</a></li>
+                                <li><a href="#">2021</a></li>
+                                <li><a href="#">2022</a></li>
+                                <li><a href="#">2023</a></li>
+                                <li><a href="#">2024</a></li>
+                            </ul>
+                        </div>
+                        <div class="uk-navbar-right">
+                            <ul class="uk-navbar-nav">
+                                <li class="uk-active"><a href="#">Item 1</a></li>
+                                <li><a href="#">Item 2</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div>
+            <!-- Main Content -->
+            <div id="headerTitle" class="uk-width-1-1">
+                <div class="uk-section uk-section-muted uk-padding-small">
+                    <div class="uk-container uk-container-medium uk-text-center uk-padding uk-margin">
+                        <h1 class="uk-heading-divider"><span>War and Wellbeing in Ukraine</span></h1>
+                        <p class="uk-text-lead">A Data Visualization Dashboard</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Years Content -->
+            <div class="uk-container uk-container-large">
+                <div id="about-ukraine" class="uk-section uk-section-default">
+
+                    <div class="uk-container uk-container-medium">
+                        <h2 class="uk-heading-bullet uk-background-default uk-padding-remove-horizontal uk-padding-small" uk-sticky="offset:80; start:0; end: #year2015; animation: uk-animation-fade"><span>About Ukraine</span></h2>
+                        <div id="graph0">
+                            <ul uk-tab>
+                                <li class="uk-active"><a href="#">Ukraine</a></li>
+                                <li><a href="#">Best Country</a></li>
+                                <li><a href="#">Worst Country</a></li>
+                            </ul>
+                            <div class="uk-switcher uk-margin">
+                                <div>
+                                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>                                    
+                                </div>
+                                <div>
+                                    <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                                </div>
+                                <div>
+                                    <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur, sed do eiusmod.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a class="uk-button uk-button-default" href="#modal-full" uk-toggle>What happened ?</a>
+
+                        <div id="modal-full" class="uk-modal-full" uk-modal>
+                            <div class="uk-modal-dialog">
+                                <button class="uk-modal-close-full uk-close-large" type="button" uk-close></button>
+                                <div class="uk-grid-collapse uk-child-width-1-2@s uk-flex-middle" uk-grid>
+                                    <div class="uk-background-cover" style="background-image: url('./ukraine-2015.jfif');" uk-height-viewport></div>
+                                    <div class="uk-container uk-container-xsmall uk-padding">
+                                        <h2 class="uk-margin-remove-bottom uk-text-muted">2015</h2>
+                                        <h1 class="uk-margin-remove-top">Ukraine power grid hack</h1>
+                                        <p>On December 23, 2015, the power grid in two western oblasts of Ukraine was hacked, which resulted in power outages for roughly 230,000 consumers in Ukraine for 1-6 hours.</p>
+                                        <p>The attack took place during the ongoing Russo-Ukrainian War (2014-present) and is attributed to a Russian advanced persistent threat group known as "Sandworm". It is the first publicly acknowledged successful cyberattack on a power grid.</p>
+                                        <div>[INSERT RADAR CHART HERE]</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div id="comparing-ukraine" class="uk-section uk-section-default">
+                    <div class="uk-container uk-container-medium">
+                        <h2 class="uk-heading-bullet uk-background-default uk-padding-remove-horizontal uk-padding-small" uk-sticky="offset:80; start:0; end: #year2015; animation: uk-animation-fade"><span>Comparing Ukraine</span></h2>
+                        <div id="graph1"></div>
+                        <div id="radar" class="radarChart"></div>
+                    </div>
+                </div>
+
+                <div id="best-of-europe" class="uk-section uk-section-default">
+                    <div class="uk-container uk-container-medium">
+                        <h2 class="uk-heading-bullet uk-background-default uk-padding-remove-horizontal uk-padding-small" uk-sticky="offset:80; start:0; end: #year2015; animation: uk-animation-fade"><span>The best of Europe</span></h2>
+                        <div id="graph2"></div>
+                        <div id="my_dataviz"></div>
+                        <a id="playBtn" class="uk-button uk-button-large uk-button-primary">Play an animation</a>
+                    </div>
+                </div>
+                <div id="worst-of-europe" class="uk-section uk-section-default">
+                    <div class="uk-container uk-container-medium">
+                        <h2 class="uk-heading-bullet uk-background-default uk-padding-remove-horizontal uk-padding-small" uk-sticky="offset:80; start:0; end: #year2015; animation: uk-animation-fade"><span>The worst of Europe</span></h2>
+                        <div id="graph3"></div>
+                        <div id="dotplot_chart1"></div>
+                    </div>
+                </div>
+                <div id="other parameters" class="uk-section uk-section-default">
+                    <div class="uk-container uk-container-medium">
+                        <h2 class="uk-heading-bullet uk-background-default uk-padding-remove-horizontal uk-padding-small" uk-sticky="offset:80; start:0; end: #year2015; animation: uk-animation-fade"><span>Other parameters</span></h2>
+                        <div id="graph4"></div>
+                        <form class="uk-form-stacked">
+                            <div class="uk-margin">
+                                <label class="uk-form-label" for="varSelect">Quero analisar</label>
+                                <div class="uk-form-controls">
+                                    <select class="uk-select uk-width-1-4" id="varSelect">
+                                        <option value="HAPPINESS SCORE">Happiness score</option>
+                                        <option value="GDP PER CAPITA (Billions)">GDP per capita (billions)</option>
+                                        <option value="SOCIAL SUPPORT">Social support</option>
+                                        <option value="HEALTHY LIFE EXPECTANCY">Healthy life expectancy</option>
+                                        <option value="FREEDOM TO MAKE LIFE CHOICES">Freedom to make life choices</option>
+                                        <option value="GENEROSITY">Generosity</option>
+                                        <option value="PERCEPTION OF CORRUPTION">Perception of corruption</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="dotplot_chart2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="footer" class="uk-width-1-1">
+                <div class="uk-section uk-section-secondary uk-padding-small">
+                    <div class="uk-container uk-container-small uk-text-center uk-padding uk-margin">
+                        <h1 class="uk-heading-divider"><span>War and Wellbeing in Ukraine</span></h1>
+                        <p class="uk-text-lead">A Data Visualization Dashboard</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Scroll-to-top -->
+        <a href="#" uk-totop uk-scroll 
+            class="uk-position-fixed uk-position-bottom-right uk-margin-medium uk-button uk-button-default uk-hidden" 
+            id="backToTop"></a>
+
+        <script>
+        // Example JS to show the back-to-top button after scrolling
+        window.addEventListener('scroll', function() {
+            const btn = document.getElementById('backToTop');
+            if (window.scrollY > window.innerHeight) {
+            btn.classList.remove('uk-hidden');
+            } else {
+            btn.classList.add('uk-hidden');
+            }
+        });
+        </script>
+
+    <script src="dotplot.js" type="module"></script>
+    <script   type="module" src="linechart.js"></script>
+
+    </body>
+</html>
