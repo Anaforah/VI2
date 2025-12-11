@@ -68,55 +68,49 @@ export function RadarChart({ data, container, columns, animate=false }) {
         .angle((d,i)=>i*angleSlice)
         .curve(d3.curveCardinalClosed);
 
+    // Use keyed data joins para permitir que séries sejam removidas
     const series = data.map((row,idx)=>({
         year: row.YEAR,
-        values: columns.map((c,i)=>({
-            value: +row[c.norm],
-            raw: +row[c.raw],
-            label: c.label,
-            year: row.YEAR,
-            angleIndex: i
-        })),
+        values: columns.map(c=>({value:+row[c.norm], raw:+row[c.raw], label:c.label, year:row.YEAR})),
         gray: 0.4 + idx*0.4/data.length
     }));
 
-    const paths = svg.selectAll(".radarSeries").data(series,d=>d.year);
+    // Paths com keyed join
+    const paths = svg.selectAll(".radarPath").data(series, d=>d.year);
     paths.exit().remove();
     paths.join(
         enter=>enter.append("path")
-            .attr("class","radarSeries")
+            .attr("class","radarPath")
             .attr("data-year",d=>d.year)
             .attr("stroke",d=>`rgba(50,50,50,${d.gray})`)
             .attr("fill",d=>`rgba(100,100,100,${d.gray*0.4})`)
             .attr("stroke-width",2)
             .attr("d",d=>radarLine(d.values)),
         update=>update
-            .attr("data-year",d=>d.year)
-            .transition().duration(animate?800:0)
             .attr("stroke",d=>`rgba(50,50,50,${d.gray})`)
             .attr("fill",d=>`rgba(100,100,100,${d.gray*0.4})`)
-            .attr("stroke-width",2)
             .attr("d",d=>radarLine(d.values))
     );
 
-    const pointGroups = svg.selectAll(".radarSeriesPoints").data(series,d=>d.year);
+    // Points com keyed join
+    const pointGroups = svg.selectAll(".radarPointGroup").data(series, d=>d.year);
     pointGroups.exit().remove();
     const mergedPoints = pointGroups.join(
-        enter=>enter.append("g").attr("class","radarSeriesPoints").attr("data-year",d=>d.year),
+        enter=>enter.append("g").attr("class","radarPointGroup").attr("data-year",d=>d.year),
         update=>update.attr("data-year",d=>d.year)
     );
 
     mergedPoints.each(function(seriesData){
         const pts = d3.select(this)
             .selectAll("circle")
-            .data(seriesData.values.map(v=>({ ...v, gray: seriesData.gray })), d=>d.label);
+            .data(seriesData.values.map(v=>({...v, gray: seriesData.gray})), d=>d.label);
 
         pts.exit().remove();
         pts.join(
             enter=>enter.append("circle")
                 .attr("r",5)
-                .attr("cx",d=>rScale(d.value)*Math.cos(d.angleIndex*angleSlice-Math.PI/2))
-                .attr("cy",d=>rScale(d.value)*Math.sin(d.angleIndex*angleSlice-Math.PI/2))
+                .attr("cx",(d,i)=>rScale(d.value)*Math.cos(i*angleSlice-Math.PI/2))
+                .attr("cy",(d,i)=>rScale(d.value)*Math.sin(i*angleSlice-Math.PI/2))
                 .attr("fill",d=>`rgba(50,50,50,${d.gray})`)
                 .on("mouseover",(event,d)=>{
                     tooltip.style("opacity",1)
@@ -125,10 +119,8 @@ export function RadarChart({ data, container, columns, animate=false }) {
                 .on("mousemove",e=>tooltip.style("left",e.pageX+15+"px").style("top",e.pageY+15+"px"))
                 .on("mouseout",()=>tooltip.style("opacity",0)),
             update=>update
-                .transition().duration(animate?800:0)
-                .attr("cx",d=>rScale(d.value)*Math.cos(d.angleIndex*angleSlice-Math.PI/2))
-                .attr("cy",d=>rScale(d.value)*Math.sin(d.angleIndex*angleSlice-Math.PI/2))
-                .attr("fill",d=>`rgba(50,50,50,${d.gray})`)
+                .attr("cx",(d,i)=>rScale(d.value)*Math.cos(i*angleSlice-Math.PI/2))
+                .attr("cy",(d,i)=>rScale(d.value)*Math.sin(i*angleSlice-Math.PI/2))
         );
     });
 }
@@ -157,37 +149,35 @@ function RadarVariable({ data, container, variableRaw, animate=false }) {
         .style("font-size","12px");
 
     const svgC = d3.select(container);
-    if (!animate) svgC.selectAll("*").remove();
+    svgC.selectAll("*").remove(); // Always clear to rebuild grid with correct data length
     let svgEl = svgC.select("svg");
     if (svgEl.empty()) svgEl = svgC.append("svg").attr("width",width).attr("height",height);
     let svg = svgEl.select("g");
     if (svg.empty()) svg = svgEl.append("g").attr("transform",`translate(${width/2},${height/2})`);
 
-    // GRID
-    if (!animate) {
-        for(let level=1;level<=5;level++)
-            svg.append("circle")
-                .attr("r",(radius*level)/5)
-                .attr("fill","#CDCDCD")
-                .attr("fill-opacity",0.1)
-                .attr("stroke","#CDCDCD");
+    // GRID - always rebuild based on current data
+    for(let level=1;level<=5;level++)
+        svg.append("circle")
+            .attr("r",(radius*level)/5)
+            .attr("fill","#CDCDCD")
+            .attr("fill-opacity",0.1)
+            .attr("stroke","#CDCDCD");
 
-        data.forEach((d,i)=>{
-            svg.append("line")
-                .attr("x1",0).attr("y1",0)
-                .attr("x2",rScale(1)*Math.cos(i*angleSlice-Math.PI/2))
-                .attr("y2",rScale(1)*Math.sin(i*angleSlice-Math.PI/2))
-                .attr("stroke","#777");
+    data.forEach((d,i)=>{
+        svg.append("line")
+            .attr("x1",0).attr("y1",0)
+            .attr("x2",rScale(1)*Math.cos(i*angleSlice-Math.PI/2))
+            .attr("y2",rScale(1)*Math.sin(i*angleSlice-Math.PI/2))
+            .attr("stroke","#777");
 
-            svg.append("text")
-                .attr("x", rScale(1.2)*Math.cos(i*angleSlice-Math.PI/2))
-                .attr("y", rScale(1.2)*Math.sin(i*angleSlice-Math.PI/2))
-                .attr("text-anchor","middle")
-                .style("font-size","12px")
-                .style("fill","#444")
-                .text(d.YEAR);
-        });
-    }
+        svg.append("text")
+            .attr("x", rScale(1.2)*Math.cos(i*angleSlice-Math.PI/2))
+            .attr("y", rScale(1.2)*Math.sin(i*angleSlice-Math.PI/2))
+            .attr("text-anchor","middle")
+            .style("font-size","12px")
+            .style("fill","#444")
+            .text(d.YEAR);
+    });
 
     const col = radarColumns.find(c=>c.raw===variableRaw);
     const radarData = data.map(d=>({
@@ -206,7 +196,6 @@ function RadarVariable({ data, container, variableRaw, animate=false }) {
     // Linha
     svg.selectAll(".radarVarPath").data([radarData])
         .join("path")
-        .transition().duration(animate?800:0)
         .attr("class","radarVarPath")
         .attr("d",radarLine)
         .attr("stroke","steelblue")
@@ -214,22 +203,22 @@ function RadarVariable({ data, container, variableRaw, animate=false }) {
         .attr("fill","rgba(70,130,180,0.2)");
 
     // Pontos
-    svg.selectAll(".radarVarPoint").data(radarData,d=>d.year)
+    const points = svg.selectAll(".radarVarPoint").data(radarData,d=>d.year)
         .join("circle")
-        .transition().duration(animate?800:0)
         .attr("class","radarVarPoint")
         .attr("r",5)
         .attr("cx",(d,i)=>rScale(d.value)*Math.cos(i*angleSlice-Math.PI/2))
         .attr("cy",(d,i)=>rScale(d.value)*Math.sin(i*angleSlice-Math.PI/2))
-        .attr("fill","steelblue")
-        .on("mouseover",(event,d)=>{
+        .attr("fill","steelblue");
+    
+    points.on("mouseover",(event,d)=>{
             tooltip.style("opacity",1)
                 .html(`
                     <strong>${d.label}</strong><br>
                     <strong>Year:</strong> ${d.year}<br>
                     <strong>Original:</strong> ${d.raw}<br>
                     <strong>Normalized:</strong> ${d.value.toFixed(3)}<br>
-                    <em>${d.desc}</em>
+                    <em>${d.desc||''}</em>
                 `);
         })
         .on("mousemove",e=>{
@@ -249,14 +238,47 @@ d3.csv("dataset-ukrain.csv").then(data=>{
         return d;
     });
 
-    // Inicializar radar1 (todos os parâmetros)
+    // Inicializar radar original (todos os parâmetros)
     RadarChart({ data:fullRadarData, container:"#radar", columns:radarColumns, animate:false });
 
-    // Inicializar radar2 (Happiness score)
-    RadarVariable({ data:fullRadarData, container:"#radar2", variableRaw:"HAPPINESS SCORE", animate:false });
+    // Create container and radar charts for each parameter
+    const container = document.getElementById("radar-container");
+    if (container) {
+        container.style.display = "grid";
+        container.style.gridTemplateColumns = "repeat(auto-fit, minmax(400px, 1fr))";
+        container.style.gap = "20px";
+        container.style.padding = "20px";
+
+        radarColumns.forEach(col => {
+            const chartDiv = document.createElement("div");
+            chartDiv.id = `radar-${col.label.toLowerCase().replace(/\s+/g, "-")}`;
+            chartDiv.className = "radarChart";
+            chartDiv.style.padding = "10px";
+            
+            const title = document.createElement("h2");
+            title.textContent = col.label;
+            title.style.textAlign = "center";
+            title.style.margin = "10px 0";
+            
+            const svgContainer = document.createElement("div");
+            svgContainer.id = `${chartDiv.id}-svg`;
+            
+            chartDiv.appendChild(title);
+            chartDiv.appendChild(svgContainer);
+            container.appendChild(chartDiv);
+
+            // Render radar for this parameter
+            RadarVariable({
+                data: fullRadarData,
+                container: `#${svgContainer.id}`,
+                variableRaw: col.raw,
+                animate: false
+            });
+        });
+    }
 });
 
-// Atualiza ambos os radares conforme o filtro de ano
+// Atualiza todos os radares conforme o filtro de ano
 function updateRadarsByYear(yearValue) {
     if (!fullRadarData.length) return;
     let filtered = fullRadarData;
@@ -266,11 +288,8 @@ function updateRadarsByYear(yearValue) {
     }
 
     const animate = true;
+    // Update original radar with all parameters (este usa o filtro)
     RadarChart({ data: filtered, container: "#radar", columns: radarColumns, animate });
-    // Reusa variável selecionada se existir; fallback para Happiness
-    const varSelect = document.getElementById("varSelect");
-    const selectedVar = varSelect ? varSelect.value : "HAPPINESS SCORE";
-    RadarVariable({ data: filtered, container: "#radar2", variableRaw: selectedVar, animate });
 }
 
 // Listener para select de anos no index.html
@@ -278,17 +297,5 @@ const yearSelectEl = document.getElementById("yearSelect");
 if (yearSelectEl) {
     yearSelectEl.addEventListener("change", (e) => {
         updateRadarsByYear(e.target.value);
-    });
-}
-
-/* ========== SELECT VARIÁVEL PARA RADAR2 ========= */
-const varSelectEl = document.getElementById("varSelect");
-if (varSelectEl) {
-    d3.select(varSelectEl).on("change",function(){
-        const yearVal = yearSelectEl ? yearSelectEl.value : "2015-2024";
-        const dataFiltered = (yearVal && yearVal !== "2015-2024")
-            ? fullRadarData.filter(d => d.YEAR === +yearVal)
-            : fullRadarData;
-        RadarVariable({ data:dataFiltered, container:"#radar2", variableRaw:this.value, animate:true });
     });
 }
