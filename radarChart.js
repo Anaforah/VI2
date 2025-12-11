@@ -68,31 +68,68 @@ export function RadarChart({ data, container, columns, animate=false }) {
         .angle((d,i)=>i*angleSlice)
         .curve(d3.curveCardinalClosed);
 
-    data.forEach((row,idx)=>{
-        const radarData = columns.map(c=>({value:+row[c.norm], raw:+row[c.raw], label:c.label, year:row.YEAR}));
-        const gray = 0.4 + idx*0.4/data.length;
-        const path = svg.selectAll(`.radar_${row.YEAR}`).data([radarData])
-            .join("path")
-            .attr("class",`radar_${row.YEAR}`)
-            .attr("stroke",`rgba(50,50,50,${gray})`)
-            .attr("fill",`rgba(100,100,100,${gray*0.4})`)
-            .attr("stroke-width",2)
-            .attr("d",radarLine);
+    const series = data.map((row,idx)=>({
+        year: row.YEAR,
+        values: columns.map((c,i)=>({
+            value: +row[c.norm],
+            raw: +row[c.raw],
+            label: c.label,
+            year: row.YEAR,
+            angleIndex: i
+        })),
+        gray: 0.4 + idx*0.4/data.length
+    }));
 
-        // Points
-        svg.selectAll(`.pt_${row.YEAR}`).data(radarData)
-            .join("circle")
-            .attr("class",`pt_${row.YEAR}`)
-            .attr("r",5)
-            .attr("cx",(d,i)=>rScale(d.value)*Math.cos(i*angleSlice-Math.PI/2))
-            .attr("cy",(d,i)=>rScale(d.value)*Math.sin(i*angleSlice-Math.PI/2))
-            .attr("fill",`rgba(50,50,50,${gray})`)
-            .on("mouseover",(event,d)=>{
-                tooltip.style("opacity",1)
-                    .html(`<strong>${d.label}</strong><br>Year: ${d.year}<br>Value: ${d.raw}`);
-            })
-            .on("mousemove",e=>tooltip.style("left",e.pageX+15+"px").style("top",e.pageY+15+"px"))
-            .on("mouseout",()=>tooltip.style("opacity",0));
+    const paths = svg.selectAll(".radarSeries").data(series,d=>d.year);
+    paths.exit().remove();
+    paths.join(
+        enter=>enter.append("path")
+            .attr("class","radarSeries")
+            .attr("data-year",d=>d.year)
+            .attr("stroke",d=>`rgba(50,50,50,${d.gray})`)
+            .attr("fill",d=>`rgba(100,100,100,${d.gray*0.4})`)
+            .attr("stroke-width",2)
+            .attr("d",d=>radarLine(d.values)),
+        update=>update
+            .attr("data-year",d=>d.year)
+            .transition().duration(animate?800:0)
+            .attr("stroke",d=>`rgba(50,50,50,${d.gray})`)
+            .attr("fill",d=>`rgba(100,100,100,${d.gray*0.4})`)
+            .attr("stroke-width",2)
+            .attr("d",d=>radarLine(d.values))
+    );
+
+    const pointGroups = svg.selectAll(".radarSeriesPoints").data(series,d=>d.year);
+    pointGroups.exit().remove();
+    const mergedPoints = pointGroups.join(
+        enter=>enter.append("g").attr("class","radarSeriesPoints").attr("data-year",d=>d.year),
+        update=>update.attr("data-year",d=>d.year)
+    );
+
+    mergedPoints.each(function(seriesData){
+        const pts = d3.select(this)
+            .selectAll("circle")
+            .data(seriesData.values.map(v=>({ ...v, gray: seriesData.gray })), d=>d.label);
+
+        pts.exit().remove();
+        pts.join(
+            enter=>enter.append("circle")
+                .attr("r",5)
+                .attr("cx",d=>rScale(d.value)*Math.cos(d.angleIndex*angleSlice-Math.PI/2))
+                .attr("cy",d=>rScale(d.value)*Math.sin(d.angleIndex*angleSlice-Math.PI/2))
+                .attr("fill",d=>`rgba(50,50,50,${d.gray})`)
+                .on("mouseover",(event,d)=>{
+                    tooltip.style("opacity",1)
+                        .html(`<strong>${d.label}</strong><br>Year: ${d.year}<br>Value: ${d.raw}`);
+                })
+                .on("mousemove",e=>tooltip.style("left",e.pageX+15+"px").style("top",e.pageY+15+"px"))
+                .on("mouseout",()=>tooltip.style("opacity",0)),
+            update=>update
+                .transition().duration(animate?800:0)
+                .attr("cx",d=>rScale(d.value)*Math.cos(d.angleIndex*angleSlice-Math.PI/2))
+                .attr("cy",d=>rScale(d.value)*Math.sin(d.angleIndex*angleSlice-Math.PI/2))
+                .attr("fill",d=>`rgba(50,50,50,${d.gray})`)
+        );
     });
 }
 
@@ -219,7 +256,39 @@ d3.csv("dataset-ukrain.csv").then(data=>{
     RadarVariable({ data:fullRadarData, container:"#radar2", variableRaw:"HAPPINESS SCORE", animate:false });
 });
 
+// Atualiza ambos os radares conforme o filtro de ano
+function updateRadarsByYear(yearValue) {
+    if (!fullRadarData.length) return;
+    let filtered = fullRadarData;
+    if (yearValue && yearValue !== "2015-2024") {
+        const yr = +yearValue;
+        filtered = fullRadarData.filter(d => d.YEAR === yr);
+    }
+
+    const animate = true;
+    RadarChart({ data: filtered, container: "#radar", columns: radarColumns, animate });
+    // Reusa variável selecionada se existir; fallback para Happiness
+    const varSelect = document.getElementById("varSelect");
+    const selectedVar = varSelect ? varSelect.value : "HAPPINESS SCORE";
+    RadarVariable({ data: filtered, container: "#radar2", variableRaw: selectedVar, animate });
+}
+
+// Listener para select de anos no index.html
+const yearSelectEl = document.getElementById("yearSelect");
+if (yearSelectEl) {
+    yearSelectEl.addEventListener("change", (e) => {
+        updateRadarsByYear(e.target.value);
+    });
+}
+
 /* ========== SELECT VARIÁVEL PARA RADAR2 ========= */
-d3.select("#varSelect").on("change",function(){
-    RadarVariable({ data:fullRadarData, container:"#radar2", variableRaw:this.value, animate:true });
-});
+const varSelectEl = document.getElementById("varSelect");
+if (varSelectEl) {
+    d3.select(varSelectEl).on("change",function(){
+        const yearVal = yearSelectEl ? yearSelectEl.value : "2015-2024";
+        const dataFiltered = (yearVal && yearVal !== "2015-2024")
+            ? fullRadarData.filter(d => d.YEAR === +yearVal)
+            : fullRadarData;
+        RadarVariable({ data:dataFiltered, container:"#radar2", variableRaw:this.value, animate:true });
+    });
+}
