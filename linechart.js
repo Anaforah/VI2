@@ -1,6 +1,8 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
 export function createLineChart(width, height, margin, animation = true) {
+    // Override margins to avoid clipping and extra padding
+    margin = { top: 0, right: 0, bottom: 0, left: 0 };
     const parameters = [
         "HAPPINESS SCORE MIN-MAX NORMALIZATION",
         "GDP PER CAPITA (Billions) MIN-MAX NORMALIZATION",
@@ -31,10 +33,25 @@ export function createLineChart(width, height, margin, animation = true) {
         "PERCEPTION OF CORRUPTION": "Perceived corruption in government & business."
     };
 
-    let svg = d3.select("#my_dataviz")
+    const containerNode = document.getElementById("my_dataviz");
+    const getChartWidth = () => {
+        const raw = containerNode ? containerNode.clientWidth : (width + margin.left + margin.right);
+            return Math.max(360, raw - margin.left - margin.right);
+    };
+        let chartWidth = getChartWidth();
+        // Use the provided height (previous static behavior)
+        let chartHeight = height;
+
+    const svgRoot = d3.select("#my_dataviz")
         .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom + 60) // extra para legenda
+        .attr("width", chartWidth + margin.left + margin.right)
+        .attr("height", chartHeight + margin.top + margin.bottom)
+        .attr("preserveAspectRatio","xMidYMid meet")
+        .attr("viewBox", `0 0 ${chartWidth + margin.left + margin.right} ${chartHeight + margin.top + margin.bottom + 60}`)
+        .style("width","100%")
+        .style("height","auto");
+
+    let svg = svgRoot
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -48,26 +65,19 @@ export function createLineChart(width, height, margin, animation = true) {
         .style("pointer-events", "none")
         .style("opacity", 0);
 
-    const xOriginal = d3.scaleLinear().domain([2015, 2024]).range([0, width]);
+    const xOriginal = d3.scaleLinear().domain([2015, 2024]).range([0, chartWidth]);
     const x = xOriginal.copy();
-    const y = d3.scaleLinear().domain([0, 1]).range([height, 0]);
+        const y = d3.scaleLinear().domain([0, 1]).range([chartHeight, 0]);
     const color = d3.scaleOrdinal().domain(parameters).range(d3.schemeCategory10);
 
-    svg.append("defs").append("clipPath")
-        .attr("id", "line-clip")
-        .append("rect")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("x", 0)
-        .attr("y", 0);
+    // Remove clipPath to avoid any accidental cutting by the canvas
 
     const chartArea = svg.append("g")
-        .attr("class", "chart-area")
-        .attr("clip-path", "url(#line-clip)");
+        .attr("class", "chart-area");
 
     // Eixos
     const xAxis = svg.append("g")
-        .attr("transform", `translate(0,${height})`)
+        .attr("transform", `translate(0,${chartHeight})`)
         .call(d3.axisBottom(x).ticks(10).tickFormat(d3.format("d")));
 
     svg.append("g")
@@ -75,7 +85,8 @@ export function createLineChart(width, height, margin, animation = true) {
         .select(".domain").remove();
 
     const brush = d3.brushX()
-        .extent([[0, 0], [width, height]])
+        .extent([[0, 0], [chartWidth, chartHeight]])
+        .on("brush", updateChart)
         .on("end", updateChart);
 
     const activeParams = {};
@@ -152,7 +163,6 @@ export function createLineChart(width, height, margin, animation = true) {
 
         const [x0, x1] = selection.map(xOriginal.invert);
         if (x0 === x1) {
-            chartArea.select(".brush").call(brush.move, null);
             return;
         }
 
@@ -162,9 +172,6 @@ export function createLineChart(width, height, margin, animation = true) {
             Math.min(domain[1], x1)
         ]);
         redraw();
-
-        // Clear the brush without triggering a reset; ignore ensuing synthetic events.
-        chartArea.select(".brush").call(brush.move, null);
     }
 
     d3.csv("dataset-ukrain.csv").then(data => {
@@ -174,8 +181,15 @@ export function createLineChart(width, height, margin, animation = true) {
         });
         chartData = data;
 
+        // Add brush BELOW marks so it doesn't block hover
+        const brushLayer = chartArea.append("g")
+            .attr("class", "brush")
+            .call(brush);
+        // Make selection non-blocking for hover; overlay remains for brushing
+        brushLayer.select(".selection").style("pointer-events","none");
+
         parameters.forEach((param, i) => {
-            activeParams[param] = false;
+            activeParams[param] = true; // start activated
             const safe = cssSafe(param);
             const raw = param.replace(" MIN-MAX NORMALIZATION", "");
 
@@ -188,7 +202,7 @@ export function createLineChart(width, height, margin, animation = true) {
                 .attr("cy", d => y(d[param]))
                 .attr("r", 5)
                 .attr("fill", color(param))
-                .attr("fill-opacity", 0.2)
+                .attr("fill-opacity", 1)
                 .style("cursor", "pointer")
                 .on("click", () => toggleParameter(param))
                 .on("mouseover", (event, d) => {
@@ -204,7 +218,7 @@ export function createLineChart(width, height, margin, animation = true) {
                 .attr("fill", "none")
                 .attr("stroke", color(param))
                 .attr("stroke-width", 2)
-                .attr("stroke-opacity", 0.2)
+                .attr("stroke-opacity", 1)
                 .attr("d", d3.line()
                     .x(d => x(d.YEAR))
                     .y(d => y(d[param]))
@@ -216,16 +230,61 @@ export function createLineChart(width, height, margin, animation = true) {
             pointsGroups.push({ group: dotGroup, param });
         });
 
-        chartArea.append("g")
-            .attr("class", "brush")
-            .call(brush);
+        // (brush already added before marks)
 
         svg.on("dblclick", resetZoom);
+
+        const resetBtn = document.getElementById("resetAreaZoom");
+        if (resetBtn) {
+            resetBtn.addEventListener("click", () => {
+                chartArea.select(".brush").call(brush.move, null);
+                resetZoom();
+            });
+        }
+
+        // Simple play: sweep a 2-year brush window across the timeline
+        const playBtn = document.getElementById("playBtn");
+        let playTimer = null;
+        if (playBtn) {
+            playBtn.addEventListener("click", () => {
+                if (playTimer) {
+                    // stop
+                    clearInterval(playTimer);
+                    playTimer = null;
+                    playBtn.textContent = "▶ Play";
+                    chartArea.select(".brush").call(brush.move, null);
+                    resetZoom();
+                    return;
+                }
+
+                playBtn.textContent = "⏸ Pause";
+                const years = chartData.map(d => d.YEAR).filter((v,i,arr)=>arr.indexOf(v)===i).sort((a,b)=>a-b);
+                let idx = 0;
+                const windowSize = 2; // years
+                playTimer = setInterval(() => {
+                    const startYear = years[idx];
+                    const endYear = Math.min(startYear + windowSize, years[years.length-1]);
+                    const x0 = xOriginal(startYear);
+                    const x1 = xOriginal(endYear);
+                    chartArea.select(".brush").call(brush.move, [x0, x1]);
+                    idx++;
+                    if (idx >= years.length) {
+                        clearInterval(playTimer);
+                        playTimer = null;
+                        playBtn.textContent = "▶ Play";
+                        chartArea.select(".brush").call(brush.move, null);
+                        resetZoom();
+                    }
+                }, 700);
+            });
+        }
+
+        // Note: responsive resizing removed for stability; chart uses fixed height
 
         // LEGENDA HORIZONTAL ABAIXO
         const legendContainer = svg.append("g")
             .attr("class", "legend")
-            .attr("transform", `translate(0, ${height + 40})`); // 40 px abaixo do gráfico
+            .attr("transform", `translate(0, ${chartHeight + 40})`); // 40 px abaixo do gráfico
 
         const legendSpacing = 120; // espaçamento horizontal
 
@@ -249,13 +308,13 @@ export function createLineChart(width, height, margin, animation = true) {
                 .attr("width", 12)
                 .attr("height", 12)
                 .attr("fill", color(param))
-                .style("opacity", 0.3);
+                .style("opacity", 1);
 
             g.append("text")
                 .attr("x", 18)
                 .attr("y", 10)
                 .style("font-size", "12px")
-                .style("opacity", 0.3)
+                .style("opacity", 1)
                 .text(legendNames[param]);
         });
     });

@@ -241,41 +241,31 @@ d3.csv("dataset-ukrain.csv").then(data=>{
     // Inicializar radar original (todos os parâmetros)
     RadarChart({ data:fullRadarData, container:"#radar", columns:radarColumns, animate:false });
 
-    // Create container and radar charts for each parameter
-    const container = document.getElementById("radar-container");
-    if (container) {
-        container.style.display = "grid";
-        container.style.gridTemplateColumns = "repeat(auto-fit, minmax(400px, 1fr))";
-        container.style.gap = "20px";
-        container.style.padding = "20px";
+    // Render each parameter radar into pre-existing divs in HTML
+    const paramTargets = [
+        { id: "#radar-happiness", raw: "HAPPINESS SCORE" },
+        { id: "#radar-gdp", raw: "GDP PER CAPITA (Billions)" },
+        { id: "#radar-social-support", raw: "SOCIAL SUPPORT" },
+        { id: "#radar-healthy-life", raw: "HEALTHY LIFE EXPECTANCY" },
+        { id: "#radar-freedom", raw: "FREEDOM TO MAKE LIFE CHOICES" },
+        { id: "#radar-generosity", raw: "GENEROSITY" },
+        { id: "#radar-corruption", raw: "PERCEPTION OF CORRUPTION" }
+    ];
 
-        radarColumns.forEach(col => {
-            const chartDiv = document.createElement("div");
-            chartDiv.id = `radar-${col.label.toLowerCase().replace(/\s+/g, "-")}`;
-            chartDiv.className = "radarChart";
-            chartDiv.style.padding = "10px";
-            
-            const title = document.createElement("h2");
-            title.textContent = col.label;
-            title.style.textAlign = "center";
-            title.style.margin = "10px 0";
-            
-            const svgContainer = document.createElement("div");
-            svgContainer.id = `${chartDiv.id}-svg`;
-            
-            chartDiv.appendChild(title);
-            chartDiv.appendChild(svgContainer);
-            container.appendChild(chartDiv);
-
-            // Render radar for this parameter
-            RadarVariable({
-                data: fullRadarData,
-                container: `#${svgContainer.id}`,
-                variableRaw: col.raw,
-                animate: false
-            });
-        });
-    }
+    paramTargets.forEach(t => {
+        const el = document.querySelector(t.id);
+        if (!el) return;
+        // Ensure inner svg container exists
+        let svgHolder = el.querySelector(".radar-svg-holder");
+        if (!svgHolder) {
+            svgHolder = document.createElement("div");
+            svgHolder.className = "radar-svg-holder";
+            svgHolder.id = `${t.id.replace('#','')}-svg`;
+            el.appendChild(svgHolder);
+        }
+        const targetId = svgHolder.id ? `#${svgHolder.id}` : t.id;
+        RadarVariable({ data: fullRadarData, container: targetId, variableRaw: t.raw, animate: false });
+    });
 });
 
 // Atualiza todos os radares conforme o filtro de ano
