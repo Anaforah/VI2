@@ -1,4 +1,4 @@
-import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+/*import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
 export let fullRadarData = [];
 export const radarColumns = [
@@ -11,7 +11,7 @@ export const radarColumns = [
     { norm:"PERCEPTION OF CORRUPTION MIN-MAX NORMALIZATION", raw:"PERCEPTION OF CORRUPTION", label:"Corruption" }
 ];
 
-/* ========== FUNÇÃO RADAR ORIGINAL ========== */
+ ========== FUNÇÃO RADAR ORIGINAL ========== 
 export function RadarChart({ data, container, columns, animate=false }) {
     const width = window.innerWidth/3;
     const height = width;
@@ -125,7 +125,7 @@ export function RadarChart({ data, container, columns, animate=false }) {
     });
 }
 
-/* ========== RADAR2 POR VARIÁVEL ========= */
+ ========== RADAR2 POR VARIÁVEL ========= 
 function RadarVariable({ data, container, variableRaw, animate=false }) {
     const width = window.innerWidth/3;
     const height = width;
@@ -229,7 +229,7 @@ function RadarVariable({ data, container, variableRaw, animate=false }) {
 }
 
 
-/* ========== CARREGAR CSV ========== */
+========== CARREGAR CSV ========== 
 d3.csv("dataset-ukrain.csv").then(data=>{
     fullRadarData = data.map(d=>{
         radarColumns.forEach(c=>d[c.norm]=+d[c.norm]);
@@ -297,3 +297,4 @@ if (yearSelectEl) {
         updateRadarsByYear(e.target.value);
     });
 }
+*/
