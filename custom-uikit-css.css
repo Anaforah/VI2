@@ -1,0 +1,176 @@
+/* Ensure SVG fills the container width */
+svg {
+    width: 100%;
+    height: auto;
+}
+/* =====================================================
+UIkit + PT Serif — Headings Only
+===================================================== */
+:root {
+    --uk-font-family-heading: 'PT Serif', serif;
+}
+
+/* Apply PT Serif to all heading elements and UIkit heading classes */
+h1.serif-type {
+    font-family: var(--uk-font-family-heading) !important;
+}
+
+/* Optional: add slight spacing for serif readability */
+h1 {
+    letter-spacing: 0.02em;
+}
+/* Tooltip Style (from D3 Graph Gallery) */
+.tooltip {
+    position: absolute;
+    text-align: left;
+    padding: 10px;
+    font-size: 14px;
+    background: white;
+    border: 1px solid #333;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    color: black;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+    transition: opacity 0.2s;
+}
+
+.legend {
+    margin-top: 20px;
+    font-size: 16px;
+}
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 10px;
+}
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+/* --- Base Slider Styling (Previous Step) --- */
+.noUi-target {
+    background: #f8f8f8;
+    border: none;
+    border-radius: 500px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    height: 6px;
+    cursor: pointer;
+    margin-bottom: 40px; /* Add space for the ticks below */
+}
+
+.noUi-connect {
+    background: #1e87f0; /* UIkit Primary Blue */
+}
+
+.noUi-horizontal .noUi-handle {
+    width: 18px;
+    height: 18px;
+    right: -9px;
+    top: -6px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: grab;
+}
+
+.noUi-handle:active {
+    cursor: grabbing;
+    border-color: #1e87f0;
+}
+
+.noUi-handle:before, .noUi-handle:after { display: none; }
+
+.noUi-tooltip {
+    background: #1e87f0;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 500;
+}
+
+/* --- NEW: Ticks & Numbers Styling --- */
+
+/* The container for the ticks */
+.noUi-pips-horizontal {
+    padding: 10px 0;
+    height: auto;
+    top: 100%;
+    left: 0;
+    width: 100%;
+}
+
+/* The numbers (Values) */
+.noUi-value-horizontal {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #999; /* UIkit muted text color */
+    margin-top: 5px; /* Push text down slightly */
+}
+
+/* The vertical tick lines (Markers) */
+.noUi-marker-horizontal.noUi-marker {
+    width: 1px;
+    height: 5px;
+    background: #ccc; /* Subtle gray line */
+    margin-top: 3px;  /* Push line down from track */
+}
+
+/* Hide the tiny sub-ticks if you only want the main steps */
+.noUi-marker-horizontal.noUi-marker-sub {
+    display: none;
+}
+
+/* Highlight the 'large' markers (which align with numbers) */
+.noUi-marker-horizontal.noUi-marker-large {
+    height: 8px;
+    background: #aaa;
+}
+/* Fade out the track ends slightly to indicate the "bounce zone" */
+.noUi-target {
+    background: linear-gradient(to right, 
+        transparent 0%, 
+        transparent 5%, 
+        #f8f8f8 15%, 
+        #f8f8f8 85%, 
+        transparent 95%, 
+        transparent 100%
+    );
+    box-shadow: none; /* Remove shadow to make the fade look cleaner */
+}
+/* Make pips look clickable */
+.noUi-value {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+/* Hover effect */
+.noUi-value:hover {
+    color: #1e87f0;
+}
+
+/* THE ACTIVE STATE: When a handle is on this year */
+.uk-pip-active {
+    /*
+    color: #1e87f0 !important; /* UIkit Primary Blue */
+    /*font-weight: 500;*/
+    background: #1e87f0;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 500;
+}
+
+.noUi-value.uk-pip-active:hover {
+    color: #fff;
+}
